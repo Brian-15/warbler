@@ -6,7 +6,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import EditForm, UserAddForm, LoginForm, MessageForm
-from models import db, connect_db, User, Message
+from models import Likes, db, connect_db, User, Message
 
 CURR_USER_KEY = "curr_user"
 
@@ -251,6 +251,28 @@ def delete_user():
 
     return redirect("/signup")
 
+@app.route('/users/add_like/<int:msg_id>', methods=["POST"])
+def like_message(msg_id):
+    """Add like to message for logged in user"""
+
+    if not g.user:
+        flash("You must be logged in to like messages.")
+        return redirect("/login")
+
+    if Likes.query.filter_by(user_id=g.user.id, message_id=msg_id).first():
+        Message.unlike(g.user.id, msg_id)
+    else:
+        Message.like(g.user.id, msg_id)
+    
+    return redirect("/")
+
+@app.route('/users/<int:user_id>/likes', methods=["GET"])
+def show_likes(user_id):
+    """Display messages that user has liked"""
+
+    user = User.query.get_or_404(user_id)
+
+    return render_template("users/likes.html", user=user)
 
 ##############################################################################
 # Messages routes:
@@ -323,8 +345,10 @@ def homepage():
                     .order_by(Message.timestamp.desc())
                     .limit(100)
                     .all())
+        
+        liked_ids = [like.message_id for like in Likes.query.filter_by(user_id=g.user.id).all()]
 
-        return render_template('home.html', messages=messages)
+        return render_template('home.html', messages=messages, likes=liked_ids)
 
     else:
         return render_template('home-anon.html')

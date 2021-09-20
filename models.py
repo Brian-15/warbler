@@ -199,6 +199,28 @@ class Message(db.Model):
 
     user = db.relationship('User')
 
+    @classmethod
+    def like(cls, user_id, message_id):
+        """User of user_id likes message of message_id"""
+
+        like = Likes(user_id=user_id, message_id=message_id)
+        db.session.add(like)
+        db.session.commit()
+
+    @classmethod
+    def unlike(cls, user_id, message_id):
+        """Remove like from likes table"""
+
+        Likes.query.filter_by(user_id=user_id, message_id=message_id).delete()
+        db.session.commit()
+    
+    def is_liked(self, user_id):
+        """Checks if message instance is liked by user"""
+
+        if Likes.query.filter_by(message_id=self.id, user_id=user_id):
+            return True
+        else:
+            return False
 
 def connect_db(app):
     """Connect this database to provided Flask app.
