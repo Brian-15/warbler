@@ -1,5 +1,4 @@
 import os
-import pdb
 
 from flask import Flask, render_template, request, flash, redirect, session, g
 from flask_debugtoolbar import DebugToolbarExtension
@@ -271,8 +270,10 @@ def show_likes(user_id):
     """Display messages that user has liked"""
 
     user = User.query.get_or_404(user_id)
+    liked_ids = [like.message_id for like in Likes.query.filter_by(user_id=g.user.id).all()]
 
-    return render_template("users/likes.html", user=user)
+
+    return render_template("users/likes.html", user=user, likes=liked_ids)
 
 ##############################################################################
 # Messages routes:
@@ -312,11 +313,12 @@ def messages_show(message_id):
 def messages_destroy(message_id):
     """Delete a message."""
 
-    if not g.user:
+    msg = Message.query.get(message_id)
+
+    if not g.user or g.user.id != msg.user_id:
         flash("Access unauthorized.", "danger")
         return redirect("/")
 
-    msg = Message.query.get(message_id)
     db.session.delete(msg)
     db.session.commit()
 

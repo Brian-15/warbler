@@ -199,6 +199,10 @@ class Message(db.Model):
 
     user = db.relationship('User')
 
+    def __repr__(self):
+
+        return f"<Message {self.id} user:{self.user_id} >"
+
     @classmethod
     def like(cls, user_id, message_id):
         """User of user_id likes message of message_id"""
@@ -214,10 +218,10 @@ class Message(db.Model):
         Likes.query.filter_by(user_id=user_id, message_id=message_id).delete()
         db.session.commit()
     
-    def is_liked(self, user_id):
+    def is_liked_by(self, user_id):
         """Checks if message instance is liked by user"""
 
-        if Likes.query.filter_by(message_id=self.id, user_id=user_id):
+        if Likes.query.filter_by(message_id=self.id, user_id=user_id).one_or_none():
             return True
         else:
             return False
